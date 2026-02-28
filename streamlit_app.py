@@ -2,45 +2,58 @@ import streamlit as st
 import numpy as np
 from PIL import Image
 import matplotlib.pyplot as plt
-import tensorflow as tf
-from tensorflow.keras.applications.mobilenet import MobileNet, preprocess_input, decode_predictions
-from tensorflow.keras.preprocessing import image
 from sklearn.linear_model import LinearRegression
+
+from ultralytics import YOLO
 
 st.set_page_config(layout="wide")
 st.title("🌍 AI Waste Intelligence & Carbon Impact System")
 
-# Load Pretrained Model
-from tensorflow.keras.models import load_model
-model = load_model("waste_classifier.h5")
-# Upload Image
-uploaded_file = st.file_uploader("Upload Real-World Waste Image", type=["jpg","png","jpeg"])
+# Load YOLO model
+model = YOLO("yolov8n.pt")   # use your trained model later
+
+uploaded_file = st.file_uploader(
+    "Upload Real-World Waste Image", type=["jpg", "png", "jpeg"]
+)
 
 if uploaded_file:
-    img = Image.open(uploaded_file)
-    st.image(img, caption="Input Image", use_column_width=True)
 
-    # Preprocessing
-    img_resized = img.resize((224,224))
-    img_array = image.img_to_array(img_resized)
-    img_array = np.expand_dims(img_array, axis=0)
-    img_array = img_array / 255.0
+    img = Image.open(uploaded_file).convert("RGB")
 
-    # AI Detection
-    preds = model.predict(img_array)
+    # Run YOLO
+    results = model(np.array(img))
 
-    class_id = preds[0].argmax()
-    confidence = preds[0][class_id] * 100
+    result = results[0]
 
-    predicted_class = class_names[class_id]
+    # Draw detections
+    annotated = result.plot()
+    st.image(annotated, caption="Detected Waste Objects",
+             use_container_width=True)
 
-    st.subheader("🧠 Detected Waste Type")
-    st.write(f"{predicted_class} - {confidence:.2f}%")
+    # ----------------------------------
+    # Extract detected class names
+    # ----------------------------------
+    detected_items = []
 
-    # Waste Mapping
-    recyclable = ["bottle","can","carton"]
-    biodegradable = ["banana","apple","orange"]
-    hazardous = ["battery","lighter"]
+    names = result.names
+    if result.boxes is not None:
+        for c in result.boxes.cls:
+            detected_items.append(names[int(c)])
+
+    if len(detected_items) == 0:
+        st.warning("No objects detected.")
+        st.stop()
+
+    st.subheader("🧠 Detected Objects")
+    st.write(detected_items)
+
+    # ----------------------------------
+    # Map object → waste category
+    # ----------------------------------
+
+    recyclable = ["bottle", "cup", "can", "plastic bottle", "carton"]
+    biodegradable = ["banana", "apple", "orange", "food", "sandwich"]
+    hazardous = ["battery", "cell phone", "knife", "scissors"]
 
     total_carbon_landfill = 0
     total_carbon_saved = 0
@@ -49,18 +62,23 @@ if uploaded_file:
 
     for obj in detected_items:
 
-        if any(word in obj for word in recyclable):
+        name = obj.lower()
+
+        if any(x in name for x in recyclable):
             category = "Recyclable"
             landfill = 3
             saved = 2
-        elif any(word in obj for word in biodegradable):
+
+        elif any(x in name for x in biodegradable):
             category = "Biodegradable"
             landfill = 4
             saved = 3
-        elif any(word in obj for word in hazardous):
+
+        elif any(x in name for x in hazardous):
             category = "Hazardous"
             landfill = 8
             saved = 5
+
         else:
             category = "General"
             landfill = 5
@@ -69,11 +87,14 @@ if uploaded_file:
         total_carbon_landfill += landfill
         total_carbon_saved += saved
 
-        st.write(f"{obj} → {category}")
-        st.write(f"Landfill CO₂: {landfill} kg | Proper Segregation Saves: {saved} kg")
+        st.write(f"**{obj} → {category}**")
+        st.write(f"Landfill CO₂: {landfill} kg | Saved: {saved} kg")
         st.write("---")
 
-    # Carbon Comparison
+    # ----------------------------------
+    # Carbon comparison
+    # ----------------------------------
+
     st.subheader("🔥 Carbon Consequence Simulator")
 
     col1, col2 = st.columns(2)
@@ -84,7 +105,10 @@ if uploaded_file:
     with col2:
         st.success(f"If Properly Segregated: {total_carbon_saved} kg CO₂ Saved")
 
-    # Impact Meter
+    # ----------------------------------
+    # Impact meter
+    # ----------------------------------
+
     st.subheader("🌱 Carbon Impact Level")
 
     if total_carbon_landfill < 5:
@@ -94,34 +118,50 @@ if uploaded_file:
     else:
         st.error("High Impact")
 
-    # Green Score
+    # ----------------------------------
+    # Green score
+    # ----------------------------------
+
     green_score = total_carbon_saved * 10
     st.subheader("🏆 Green Impact Score")
     st.write(f"Green Credits Earned: {green_score}")
 
-    # Dashboard Chart
+    # ----------------------------------
+    # Dashboard chart
+    # ----------------------------------
+
     st.subheader("📊 Waste Carbon Distribution")
 
-    plt.figure()
-    plt.bar(["Landfill","Saved"], [total_carbon_landfill,total_carbon_saved])
-    st.pyplot(plt)
+    fig = plt.figure()
+    plt.bar(["Landfill", "Saved"],
+            [total_carbon_landfill, total_carbon_saved])
+    st.pyplot(fig)
+    plt.close()
 
-    # Predictive Insight
+    # ----------------------------------
+    # Predictive insight
+    # ----------------------------------
+
     st.subheader("📈 Predictive Carbon Trend")
 
-    months = np.array(range(1,7)).reshape(-1,1)
-    carbon_history = np.array([5,7,6,8,9,10])
+    months = np.array(range(1, 7)).reshape(-1, 1)
+    carbon_history = np.array([5, 7, 6, 8, 9, 10])
+
     model_lr = LinearRegression()
     model_lr.fit(months, carbon_history)
 
-    future = np.array([[7],[8],[9]])
+    future = np.array([[7], [8], [9]])
     prediction = model_lr.predict(future)
 
-    plt.figure()
-    plt.plot(months, carbon_history)
-    plt.plot(future, prediction)
+    fig2 = plt.figure()
+    plt.plot(months, carbon_history, label="Past")
+    plt.plot(future, prediction, label="Predicted")
     plt.xlabel("Month")
     plt.ylabel("Carbon Impact")
-    st.pyplot(plt)
+    plt.legend()
+    st.pyplot(fig2)
+    plt.close()
 
-    st.info("If current trend continues, carbon impact may increase in coming months.")
+    st.info(
+        "If current waste trend continues, carbon impact may increase in coming months."
+    )
