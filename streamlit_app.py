@@ -11,8 +11,8 @@ st.set_page_config(layout="wide")
 st.title("🌍 AI Waste Intelligence & Carbon Impact System")
 
 # Load Pretrained Model
-model = MobileNet(weights='imagenet')
-
+from tensorflow.keras.models import load_model
+model = load_model("waste_classifier.h5")
 # Upload Image
 uploaded_file = st.file_uploader("Upload Real-World Waste Image", type=["jpg","png","jpeg"])
 
@@ -24,20 +24,18 @@ if uploaded_file:
     img_resized = img.resize((224,224))
     img_array = image.img_to_array(img_resized)
     img_array = np.expand_dims(img_array, axis=0)
-    img_array = preprocess_input(img_array)
+    img_array = img_array / 255.0
 
     # AI Detection
     preds = model.predict(img_array)
-    decoded = decode_predictions(preds, top=3)[0]
 
-    st.subheader("🧠 Detected Objects")
+    class_id = preds[0].argmax()
+    confidence = preds[0][class_id] * 100
 
-    detected_items = []
-    for item in decoded:
-        obj = item[1]
-        conf = round(item[2]*100,2)
-        st.write(f"{obj} - {conf}%")
-        detected_items.append(obj)
+    predicted_class = class_names[class_id]
+
+    st.subheader("🧠 Detected Waste Type")
+    st.write(f"{predicted_class} - {confidence:.2f}%")
 
     # Waste Mapping
     recyclable = ["bottle","can","carton"]
