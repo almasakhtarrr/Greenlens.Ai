@@ -1,4 +1,4 @@
-# GreenLens.Ai 🌱  
+# campus ecotrack AI 🌱  
 AI-Based Waste Segregation & Carbon Footprint Analyzer
 
 It is a computer vision powered sustainability platform designed for
