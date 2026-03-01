@@ -62,8 +62,7 @@ if uploaded_file:
 
     # --- Dataset Transparency Section ---
     with st.expander("📊 View Model Training Samples"):
-    st.write("These are real-world 'messy' images used to train this AI.")
-    # Show samples side-by-side
-    col_a, col_b = st.columns(2)
-    col_a.image("data_sample/sample_1.jpg", caption="Cluttered Floor Sample")
-    col_b.image("data_sample/sample_2.jpg", caption="Overlapping Waste Sample")
+        st.write("These are real-world 'messy' images used to train this AI.") # ✅ INDENTED
+        col_a, col_b = st.columns(2)
+        col_a.image("data_sample/sample_1.jpg", caption="Cluttered Floor Sample")
+        col_b.image("data_sample/sample_2.jpg", caption="Overlapping Waste Sample")
