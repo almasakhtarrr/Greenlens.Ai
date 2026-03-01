@@ -1,0 +1,954 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>EcoSenseAI — Waste Intelligence System</title>
+  <link href="https://fonts.googleapis.com/css2?family=Orbitron:wght@700;900&family=Rajdhani:wght@400;600;700&display=swap" rel="stylesheet" />
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/Chart.js/4.4.1/chart.umd.min.js"></script>
+  <style>
+    *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+    :root {
+      --bg:      #080f09;
+      --card:    #0d1a0e;
+      --border:  #1a2e1a;
+      --green:   #00E676;
+      --gdim:    #00C853;
+      --yellow:  #FFEA00;
+      --red:     #FF3D00;
+      --muted:   #4a6b4a;
+      --text:    #d4f0d4;
+      --sub:     #6b8f6b;
+    }
+    body { background: var(--bg); color: var(--text); font-family: 'Rajdhani', sans-serif; overflow-x: hidden; }
+    ::-webkit-scrollbar { width: 5px; }
+    ::-webkit-scrollbar-track { background: var(--bg); }
+    ::-webkit-scrollbar-thumb { background: var(--border); border-radius: 9px; }
+
+    /* ── NAV ── */
+    nav {
+      display: flex; align-items: center; justify-content: space-between;
+      padding: 0 28px; height: 58px;
+      border-bottom: 1px solid var(--border);
+      background: rgba(8,15,9,0.97);
+      backdrop-filter: blur(16px);
+      position: sticky; top: 0; z-index: 200;
+    }
+    .logo { font-family: 'Orbitron', monospace; font-weight: 900; font-size: 17px; letter-spacing: 2px; color: var(--green); text-shadow: 0 0 20px #00E67666; }
+    .logo span { color: #fff; }
+    .nav-tabs { display: flex; gap: 2px; flex-wrap: wrap; }
+    .tab {
+      padding: 7px 12px; border-radius: 6px; font-size: 11px; font-weight: 700;
+      cursor: pointer; border: none; letter-spacing: 1px;
+      background: transparent; color: var(--muted);
+      transition: all 0.2s; font-family: 'Rajdhani', sans-serif;
+    }
+    .tab.active { background: var(--green); color: #000; }
+    .tab:hover:not(.active) { color: var(--green); }
+    .campus-tag { font-family: monospace; font-size: 11px; color: var(--muted); letter-spacing: 2px; }
+
+    /* ── LAYOUT ── */
+    .page { max-width: 1100px; margin: 0 auto; padding: 36px 28px; }
+    .page-sm { max-width: 700px; margin: 0 auto; padding: 36px 28px; }
+    .page-md { max-width: 780px; margin: 0 auto; padding: 36px 28px; }
+    .screen { display: none; }
+    .screen.active { display: block; }
+    .grid2 { display: grid; grid-template-columns: 1fr 1fr; gap: 18px; }
+    .grid3 { display: grid; grid-template-columns: 1fr 1fr 1fr; gap: 16px; }
+    .grid4 { display: grid; grid-template-columns: 1fr 1fr 1fr 1fr; gap: 14px; }
+
+    /* ── CARDS ── */
+    .card {
+      background: var(--card); border: 1px solid var(--border);
+      border-radius: 14px; padding: 24px;
+      box-shadow: 0 4px 40px rgba(0,0,0,0.5);
+      transition: border-color 0.2s, transform 0.2s;
+    }
+    .card:hover { border-color: #00E67633; }
+    .card-red { background: #140808; border-color: #3d0a0a; }
+    .card-green-dark { background: #081408; border-color: #0a3d0a; }
+    .card-glow { border-color: #00E67633; box-shadow: 0 0 30px #00E67622; animation: glow 3s infinite; }
+    .card-yellow { background: #1a1400; border-color: #FFEA0033; }
+
+    /* ── TYPOGRAPHY ── */
+    .label { font-size: 11px; letter-spacing: 3px; color: var(--gdim); font-family: monospace; margin-bottom: 8px; text-transform: uppercase; }
+    h1 { font-family: 'Orbitron', monospace; font-size: clamp(32px, 5vw, 52px); font-weight: 900; line-height: 1.05; letter-spacing: -1px; margin-bottom: 20px; }
+    h2 { font-family: 'Orbitron', monospace; font-size: 28px; font-weight: 800; margin-bottom: 24px; letter-spacing: -0.5px; }
+    .sub { color: var(--sub); }
+    .mono { font-family: monospace; }
+
+    /* ── BUTTONS ── */
+    .btn {
+      background: var(--green); color: #000; border: none;
+      border-radius: 9px; padding: 12px 26px;
+      font-weight: 800; font-size: 14px; cursor: pointer;
+      letter-spacing: 1px; font-family: 'Rajdhani', sans-serif;
+      transition: all 0.2s;
+      box-shadow: 0 0 20px #00E67644;
+    }
+    .btn:hover { filter: brightness(1.15); transform: translateY(-1px); box-shadow: 0 0 35px #00E67688; }
+    .btn-out {
+      background: transparent; color: var(--text);
+      border: 1px solid var(--border); border-radius: 9px;
+      padding: 11px 22px; font-weight: 700; font-size: 13px;
+      cursor: pointer; letter-spacing: 1px; font-family: 'Rajdhani', sans-serif;
+      transition: all 0.2s;
+    }
+    .btn-out:hover { border-color: var(--green); color: var(--green); }
+    .btn-full { width: 100%; }
+    .btn-row { display: flex; gap: 12px; margin-top: 16px; }
+
+    /* ── TAGS ── */
+    .tag {
+      display: inline-block; border-radius: 5px;
+      padding: 3px 10px; font-size: 11px; font-weight: 700; letter-spacing: 1px;
+    }
+    .tag-green { background: #00E67622; color: #00E676; border: 1px solid #00E67644; }
+    .tag-yellow { background: #FFEA0022; color: #FFEA00; border: 1px solid #FFEA0044; }
+    .tag-red    { background: #FF3D0022; color: #FF3D00; border: 1px solid #FF3D0044; }
+    .tag-cyan   { background: #00BCD422; color: #00BCD4; border: 1px solid #00BCD444; }
+
+    /* ── ANIMATIONS ── */
+    @keyframes fadeUp { from { opacity:0; transform:translateY(18px); } to { opacity:1; transform:none; } }
+    @keyframes glow   { 0%,100%{box-shadow:0 0 15px #00E67644}50%{box-shadow:0 0 35px #00E676aa} }
+    @keyframes pulse  { 0%,100%{opacity:1}50%{opacity:.5} }
+    .fade-up { animation: fadeUp 0.5s ease both; }
+    .fade1 { animation-delay: .05s; }
+    .fade2 { animation-delay: .12s; }
+    .fade3 { animation-delay: .19s; }
+    .fade4 { animation-delay: .26s; }
+
+    /* ── MISC ── */
+    footer { text-align: center; padding: 20px 32px; border-top: 1px solid var(--border); color: var(--muted); font-size: 11px; font-family: monospace; letter-spacing: 2px; }
+    .divider { border: none; border-top: 1px solid var(--border); margin: 14px 0; }
+    .upload-zone {
+      border: 2px dashed var(--border); border-radius: 12px;
+      padding: 60px 40px; text-align: center; cursor: pointer;
+      transition: border-color 0.2s;
+    }
+    .upload-zone:hover { border-color: var(--green); }
+    .progress-bar { height: 6px; background: #0f2010; border-radius: 3px; overflow: hidden; }
+    .progress-fill { height: 100%; width: 0%; background: linear-gradient(90deg, #00C853, #00E676); border-radius: 3px; transition: width 0.1s; box-shadow: 0 0 12px #00E67688; }
+    .row { display: flex; align-items: center; gap: 12px; }
+    .row-between { display: flex; align-items: center; justify-content: space-between; }
+    .bounding-box { position: absolute; border-radius: 4px; }
+    .bb-label { position: absolute; top: -14px; left: -1px; font-size: 10px; font-weight: 700; letter-spacing: 1px; padding: 2px 8px; border-radius: 4px 4px 4px 0; }
+    .scanline { position: absolute; inset: 0; background: repeating-linear-gradient(transparent, transparent 2px, rgba(0,230,118,0.03) 2px, rgba(0,230,118,0.03) 4px); pointer-events: none; }
+    .img-fade { position: absolute; inset: 0; background: linear-gradient(to top, rgba(8,15,9,0.7) 0%, transparent 60%); pointer-events: none; }
+
+    /* ── HOME ── */
+    .hero-bg { position: absolute; inset: 0; background: radial-gradient(ellipse 60% 50% at 50% 0%, #00E67611 0%, transparent 70%); pointer-events: none; }
+    .hero-wrap { text-align: center; padding: 44px 0 50px; position: relative; }
+    .feature-pills { display: flex; gap: 10px; justify-content: center; flex-wrap: wrap; margin-bottom: 48px; }
+    .pill { background: var(--card); border: 1px solid var(--border); border-radius: 20px; padding: 9px 18px; font-size: 13px; color: var(--sub); }
+
+    /* ── SIMULATOR ── */
+    .sim-row { display: flex; justify-content: space-between; align-items: center; padding: 11px 0; }
+    .sim-row + .sim-row { border-top: 1px solid #2a0a0a; }
+    .sim-row-green + .sim-row-green { border-top: 1px solid #0a2a0a; }
+    .vs-banner { display: flex; align-items: center; justify-content: space-around; padding: 20px 32px; margin-top: 18px; }
+    .vs-sep { color: var(--border); font-size: 28px; }
+
+    /* ── METER ── */
+    .gauge-wrap { display: flex; flex-direction: column; align-items: center; padding: 16px 0 8px; }
+    .big-num { font-family: 'Orbitron', monospace; font-size: 46px; font-weight: 900; color: var(--yellow); text-shadow: 0 0 30px #FFEA0066; margin-top: 8px; }
+
+    /* ── CREDITS ── */
+    .credits-hero { text-align: center; padding: 40px 32px; background: linear-gradient(135deg, #081a09 0%, #0d1a0e 100%); border: 1px solid #00E67633; animation: glow 3s infinite; }
+    .credits-num { font-family: 'Orbitron', monospace; font-size: 62px; font-weight: 900; color: var(--green); text-shadow: 0 0 40px #00E67688; }
+
+    /* ── LEADERBOARD ── */
+    .lb-row { display: flex; align-items: center; gap: 14px; padding: 11px 10px; border-radius: 8px; margin-bottom: 4px; }
+    .lb-row.user { background: #00E6760f; border: 1px solid #00E67622; }
+    .lb-row.normal { border: 1px solid transparent; }
+    .lb-rank { font-family: 'Orbitron', monospace; font-weight: 900; font-size: 15px; width: 28px; flex-shrink: 0; }
+
+    /* ── INSIGHTS ── */
+    .insight-row { display: flex; align-items: center; gap: 16px; padding: 16px 20px; margin-bottom: 12px; }
+    .insight-icon { font-size: 30px; flex-shrink: 0; }
+    .insight-val { font-family: 'Orbitron', monospace; font-weight: 900; font-size: 14px; white-space: nowrap; }
+
+    /* ── DETECTION ── */
+    .det-row { display: flex; align-items: center; justify-content: space-between; padding: 14px 0; }
+    .det-row + .det-row { border-top: 1px solid var(--border); }
+    .det-conf { font-family: 'Orbitron', monospace; font-size: 26px; font-weight: 900; }
+
+    @media (max-width: 700px) {
+      .grid2, .grid3, .grid4 { grid-template-columns: 1fr; }
+      .vs-banner { flex-direction: column; gap: 16px; }
+      h1 { font-size: 30px; }
+      h2 { font-size: 22px; }
+    }
+  </style>
+</head>
+<body>
+
+<!-- ── NAV ── -->
+<nav>
+  <div class="logo">🌍 ECOSENSE<span>AI</span></div>
+  <div class="nav-tabs" id="navTabs"></div>
+  <div class="campus-tag">CAMPUS v2.0</div>
+</nav>
+
+<!-- ═══════════════════════════════════════════════
+     SCREEN 0 — HOME
+════════════════════════════════════════════════ -->
+<div class="screen active" id="screen-0">
+  <div class="page">
+    <div class="hero-wrap">
+      <div class="hero-bg"></div>
+      <div class="tag tag-green fade-up fade1" style="margin-bottom:20px;font-size:12px;padding:6px 18px;">🏆 SMART SUSTAINABILITY PLATFORM</div>
+      <h1 class="fade-up fade2">
+        AI-Powered<br>
+        <span style="color:var(--green);text-shadow:0 0 30px #00E67688;">Waste Intelligence</span><br>
+        <span style="font-size:24px;color:var(--sub);font-family:'Rajdhani',sans-serif;font-weight:600;letter-spacing:1px;">Real-Time Carbon Impact Analysis</span>
+      </h1>
+      <div class="btn-row fade-up fade3" style="justify-content:center;margin-bottom:50px;">
+        <button class="btn" onclick="goto(1)">⚡ START ANALYSIS</button>
+        <button class="btn-out" onclick="goto(6)">📊 DASHBOARD</button>
+      </div>
+      <div class="grid4">
+        <div class="card fade-up fade1" style="text-align:center;border-top:2px solid var(--green)">
+          <div style="font-family:'Orbitron',monospace;font-size:28px;font-weight:900;color:var(--green);text-shadow:0 0 15px #00E67666">2.4M</div>
+          <div style="font-size:12px;color:var(--sub);margin-top:6px;letter-spacing:1px">Items Analyzed</div>
+        </div>
+        <div class="card fade-up fade2" style="text-align:center;border-top:2px solid var(--green)">
+          <div style="font-family:'Orbitron',monospace;font-size:28px;font-weight:900;color:var(--green);text-shadow:0 0 15px #00E67666">18.6T</div>
+          <div style="font-size:12px;color:var(--sub);margin-top:6px;letter-spacing:1px">CO₂ Saved</div>
+        </div>
+        <div class="card fade-up fade3" style="text-align:center;border-top:2px solid var(--green)">
+          <div style="font-family:'Orbitron',monospace;font-size:28px;font-weight:900;color:var(--green);text-shadow:0 0 15px #00E67666">4,200+</div>
+          <div style="font-size:12px;color:var(--sub);margin-top:6px;letter-spacing:1px">Active Users</div>
+        </div>
+        <div class="card fade-up fade4" style="text-align:center;border-top:2px solid var(--green)">
+          <div style="font-family:'Orbitron',monospace;font-size:28px;font-weight:900;color:var(--green);text-shadow:0 0 15px #00E67666">98%</div>
+          <div style="font-size:12px;color:var(--sub);margin-top:6px;letter-spacing:1px">Detection Accuracy</div>
+        </div>
+      </div>
+    </div>
+
+    <div class="feature-pills">
+      <div class="pill">🤖 AI Detection</div>
+      <div class="pill">📊 Carbon Simulator</div>
+      <div class="pill">🎯 Green Credits</div>
+      <div class="pill">🔮 Predictive AI</div>
+      <div class="pill">📈 Live Dashboard</div>
+    </div>
+
+    <div class="card">
+      <div class="label" style="text-align:center;margin-bottom:24px">HOW IT WORKS</div>
+      <div class="grid4">
+        <div style="text-align:center;padding:0 12px">
+          <div style="font-size:36px;margin-bottom:10px">📷</div>
+          <div style="font-family:'Orbitron',monospace;font-size:13px;color:var(--green);margin-bottom:6px;font-weight:800">Capture</div>
+          <div style="font-size:13px;color:var(--sub);line-height:1.5">Upload or photograph waste items</div>
+        </div>
+        <div style="text-align:center;padding:0 12px">
+          <div style="font-size:36px;margin-bottom:10px">🤖</div>
+          <div style="font-family:'Orbitron',monospace;font-size:13px;color:var(--green);margin-bottom:6px;font-weight:800">Detect</div>
+          <div style="font-size:13px;color:var(--sub);line-height:1.5">AI identifies materials with 98% accuracy</div>
+        </div>
+        <div style="text-align:center;padding:0 12px">
+          <div style="font-size:36px;margin-bottom:10px">📊</div>
+          <div style="font-family:'Orbitron',monospace;font-size:13px;color:var(--green);margin-bottom:6px;font-weight:800">Simulate</div>
+          <div style="font-size:13px;color:var(--sub);line-height:1.5">See carbon impact of your choices</div>
+        </div>
+        <div style="text-align:center;padding:0 12px">
+          <div style="font-size:36px;margin-bottom:10px">🌱</div>
+          <div style="font-family:'Orbitron',monospace;font-size:13px;color:var(--green);margin-bottom:6px;font-weight:800">Earn</div>
+          <div style="font-size:13px;color:var(--sub);line-height:1.5">Collect green credits for eco actions</div>
+        </div>
+      </div>
+    </div>
+  </div>
+</div>
+
+<!-- ═══════════════════════════════════════════════
+     SCREEN 1 — UPLOAD
+════════════════════════════════════════════════ -->
+<div class="screen" id="screen-1">
+  <div class="page-sm">
+    <div class="label">STEP 2 / 8</div>
+    <h2>Capture Waste Sample</h2>
+    <input type="file" id="fileInput" accept="image/*" style="display:none" onchange="handleFile(event)" />
+
+    <div class="card">
+      <div id="uploadZone" class="upload-zone" onclick="document.getElementById('fileInput').click()">
+        <div style="font-size:56px;margin-bottom:16px">📷</div>
+        <div style="font-family:'Orbitron',monospace;font-weight:800;font-size:17px;margin-bottom:8px">DROP IMAGE OR CLICK</div>
+        <div style="color:var(--sub);font-size:13px;letter-spacing:1px">JPG · PNG · WEBP · Max 10MB</div>
+      </div>
+      <div id="previewArea" style="display:none">
+        <div style="position:relative;border-radius:12px;overflow:hidden;height:300px">
+          <img id="previewImg" style="width:100%;height:100%;object-fit:cover" src="" alt="preview" />
+          <div class="img-fade"></div>
+          <div class="tag tag-green" style="position:absolute;bottom:14px;left:14px">✓ IMAGE LOADED</div>
+        </div>
+        <div class="btn-row">
+          <button class="btn-out" onclick="resetUpload()">🔄 RE-UPLOAD</button>
+          <button class="btn" id="analyzeBtn" style="flex:1" onclick="startAnalysis()">🔬 ANALYZE WASTE</button>
+        </div>
+      </div>
+      <div id="uploadButtons" class="btn-row">
+        <button class="btn-out" style="flex:1" onclick="document.getElementById('fileInput').click()">📁 BROWSE FILES</button>
+        <button class="btn-out" style="flex:1">📸 OPEN CAMERA</button>
+      </div>
+    </div>
+
+    <div class="card" id="progressCard" style="display:none;margin-top:18px">
+      <div class="row-between" style="margin-bottom:10px">
+        <span class="label" style="margin:0">AI PROCESSING</span>
+        <span id="progressPct" class="mono" style="font-size:13px;color:var(--green)">0%</span>
+      </div>
+      <div class="progress-bar"><div class="progress-fill" id="progressFill"></div></div>
+      <div class="row" style="margin-top:12px;gap:20px">
+        <div id="step1" class="mono" style="font-size:11px;color:var(--muted);letter-spacing:1px">○ OBJECT DETECTION</div>
+        <div id="step2" class="mono" style="font-size:11px;color:var(--muted);letter-spacing:1px">○ CLASSIFICATION</div>
+        <div id="step3" class="mono" style="font-size:11px;color:var(--muted);letter-spacing:1px">○ CARBON SCORING</div>
+      </div>
+    </div>
+  </div>
+</div>
+
+<!-- ═══════════════════════════════════════════════
+     SCREEN 2 — DETECTION
+════════════════════════════════════════════════ -->
+<div class="screen" id="screen-2">
+  <div class="page">
+    <div class="label">STEP 3 / 8 · AI DETECTION RESULTS</div>
+    <h2>Waste Identified ✅</h2>
+    <div class="grid2">
+      <!-- Image panel -->
+      <div class="card">
+        <div class="label">ANALYZED FRAME</div>
+        <div style="position:relative;background:#030803;border-radius:10px;overflow:hidden;height:310px;border:1px solid var(--border)">
+          <img id="detectionImg" src="" alt="" style="width:100%;height:100%;object-fit:cover;display:none" />
+          <div id="noImgPlaceholder" style="display:flex;align-items:center;justify-content:center;height:100%;color:var(--muted);font-family:monospace;font-size:12px">[ SAMPLE FRAME ]</div>
+          <div class="scanline"></div>
+          <!-- Bounding boxes -->
+          <div class="bounding-box" style="top:12%;left:8%;width:38%;height:42%;border:2px solid var(--green);box-shadow:0 0 10px #00E67644">
+            <div class="bb-label tag tag-green">PLASTIC 91%</div>
+          </div>
+          <div class="bounding-box" style="top:48%;left:50%;width:40%;height:36%;border:2px solid var(--yellow);box-shadow:0 0 10px #FFEA0044">
+            <div class="bb-label tag tag-yellow">FOOD 84%</div>
+          </div>
+          <div style="position:absolute;bottom:10px;left:12px;font-family:monospace;font-size:10px;color:var(--green);letter-spacing:1px">● LIVE DETECTION ACTIVE</div>
+        </div>
+      </div>
+      <!-- Results -->
+      <div style="display:flex;flex-direction:column;gap:14px">
+        <div class="card">
+          <div class="label">DETECTED ITEMS (3)</div>
+          <div class="det-row">
+            <div>
+              <div style="font-weight:800;font-size:15px;margin-bottom:6px;letter-spacing:.5px">Plastic Bottle</div>
+              <span class="tag tag-green">RECYCLABLE</span>
+            </div>
+            <div style="text-align:right">
+              <div class="det-conf" style="color:#00E676;text-shadow:0 0 12px #00E67666">91%</div>
+              <div style="font-size:10px;color:var(--muted);letter-spacing:1px">CONFIDENCE</div>
+            </div>
+          </div>
+          <div class="det-row">
+            <div>
+              <div style="font-weight:800;font-size:15px;margin-bottom:6px;letter-spacing:.5px">Food Waste</div>
+              <span class="tag tag-yellow">BIODEGRADABLE</span>
+            </div>
+            <div style="text-align:right">
+              <div class="det-conf" style="color:#FFEA00;text-shadow:0 0 12px #FFEA0066">84%</div>
+              <div style="font-size:10px;color:var(--muted);letter-spacing:1px">CONFIDENCE</div>
+            </div>
+          </div>
+          <div class="det-row">
+            <div>
+              <div style="font-weight:800;font-size:15px;margin-bottom:6px;letter-spacing:.5px">Cardboard Box</div>
+              <span class="tag tag-green">RECYCLABLE</span>
+            </div>
+            <div style="text-align:right">
+              <div class="det-conf" style="color:#00E676;text-shadow:0 0 12px #00E67666">78%</div>
+              <div style="font-size:10px;color:var(--muted);letter-spacing:1px">CONFIDENCE</div>
+            </div>
+          </div>
+        </div>
+        <div class="card">
+          <div class="label">CATEGORY TAGS</div>
+          <div style="display:flex;gap:8px;flex-wrap:wrap;margin-bottom:18px">
+            <span class="tag tag-green">♻ RECYCLABLE</span>
+            <span class="tag tag-yellow">🌿 BIODEGRADABLE</span>
+            <span class="tag tag-red">⚠ HAZARDOUS</span>
+          </div>
+          <button class="btn btn-full" onclick="goto(3)">VIEW CARBON IMPACT →</button>
+        </div>
+      </div>
+    </div>
+  </div>
+</div>
+
+<!-- ═══════════════════════════════════════════════
+     SCREEN 3 — SIMULATOR
+════════════════════════════════════════════════ -->
+<div class="screen" id="screen-3">
+  <div class="page">
+    <div class="label">STEP 4 / 8 · CARBON CONSEQUENCE SIMULATOR</div>
+    <h2>What Happens To Your Waste?</h2>
+    <div class="grid2">
+      <!-- Landfill -->
+      <div class="card card-red">
+        <div class="row" style="margin-bottom:22px">
+          <div style="width:44px;height:44px;background:#ff3d0022;border-radius:10px;display:flex;align-items:center;justify-content:center;font-size:22px;flex-shrink:0">🏭</div>
+          <div>
+            <div style="font-family:'Orbitron',monospace;font-weight:800;font-size:15px">IF LANDFILLED</div>
+            <div style="color:var(--red);font-size:12px;letter-spacing:1px">ENVIRONMENTAL DAMAGE</div>
+          </div>
+        </div>
+        <div class="sim-row"><span style="color:var(--sub);font-size:14px">💨 CO₂ Generated</span><span style="color:var(--red);font-weight:700;font-family:monospace">4.7 kg</span></div>
+        <div class="sim-row"><span style="color:var(--sub);font-size:14px">🌡 Methane Impact</span><span style="color:#FF8800;font-weight:700;font-family:monospace">21× Warming</span></div>
+        <div class="sim-row"><span style="color:var(--sub);font-size:14px">⏳ Decomposition</span><span style="color:var(--yellow);font-weight:700;font-family:monospace">450 Years</span></div>
+        <div class="sim-row"><span style="color:var(--sub);font-size:14px">🌊 Water Polluted</span><span style="color:#FF6D00;font-weight:700;font-family:monospace">~3,000 L</span></div>
+        <div class="sim-row"><span style="color:var(--sub);font-size:14px">🐟 Marine Risk</span><span style="color:var(--red);font-weight:700;font-family:monospace">High Microplastic</span></div>
+        <div style="margin-top:18px;background:#ff3d0011;border-radius:10px;padding:16px;text-align:center;border:1px solid #ff3d0022">
+          <div style="font-family:'Orbitron',monospace;font-size:28px;font-weight:900;color:var(--red)">−4.7 kg</div>
+          <div style="color:var(--muted);font-size:12px;letter-spacing:1px;margin-top:4px">CO₂ LOST TO ATMOSPHERE</div>
+        </div>
+      </div>
+      <!-- Segregated -->
+      <div class="card card-green-dark">
+        <div class="row" style="margin-bottom:22px">
+          <div style="width:44px;height:44px;background:#00e67622;border-radius:10px;display:flex;align-items:center;justify-content:center;font-size:22px;flex-shrink:0">♻</div>
+          <div>
+            <div style="font-family:'Orbitron',monospace;font-weight:800;font-size:15px">IF SEGREGATED</div>
+            <div style="color:var(--green);font-size:12px;letter-spacing:1px">RESOURCE RECOVERY</div>
+          </div>
+        </div>
+        <div class="sim-row sim-row-green"><span style="color:var(--sub);font-size:14px">🌱 CO₂ Saved</span><span style="color:var(--green);font-weight:700;font-family:monospace">3.9 kg</span></div>
+        <div class="sim-row sim-row-green"><span style="color:var(--sub);font-size:14px">⚡ Energy Recovered</span><span style="color:#00BCD4;font-weight:700;font-family:monospace">5.2 kWh</span></div>
+        <div class="sim-row sim-row-green"><span style="color:var(--sub);font-size:14px">💧 Water Conserved</span><span style="color:var(--green);font-weight:700;font-family:monospace">2,400 L</span></div>
+        <div class="sim-row sim-row-green"><span style="color:var(--sub);font-size:14px">🔄 Material Recovered</span><span style="color:#00E676;font-weight:700;font-family:monospace">85% Reusable</span></div>
+        <div class="sim-row sim-row-green"><span style="color:var(--sub);font-size:14px">🏭 New Products</span><span style="color:var(--green);font-weight:700;font-family:monospace">12 Items Enabled</span></div>
+        <div style="margin-top:18px;background:#00e67611;border-radius:10px;padding:16px;text-align:center;border:1px solid #00e67622">
+          <div style="font-family:'Orbitron',monospace;font-size:28px;font-weight:900;color:var(--green);text-shadow:0 0 20px #00E67666">+3.9 kg</div>
+          <div style="color:var(--muted);font-size:12px;letter-spacing:1px;margin-top:4px">CO₂ SAVED FROM ATMOSPHERE</div>
+        </div>
+      </div>
+    </div>
+    <!-- VS Banner -->
+    <div class="card vs-banner">
+      <div style="text-align:center">
+        <div style="font-family:'Orbitron',monospace;font-size:22px;font-weight:900;color:var(--red)">4.7 kg CO₂</div>
+        <div style="color:var(--muted);font-size:12px;letter-spacing:1px;margin-top:4px">Landfill Damage</div>
+      </div>
+      <div class="vs-sep">⚡</div>
+      <div style="text-align:center">
+        <div style="font-family:'Orbitron',monospace;font-size:34px;font-weight:900;color:var(--yellow)">8.6 kg</div>
+        <div style="color:var(--muted);font-size:12px;letter-spacing:1px;margin-top:4px">Total Difference</div>
+      </div>
+      <div class="vs-sep">⚡</div>
+      <div style="text-align:center">
+        <div style="font-family:'Orbitron',monospace;font-size:22px;font-weight:900;color:var(--green)">3.9 kg Saved</div>
+        <div style="color:var(--muted);font-size:12px;letter-spacing:1px;margin-top:4px">With Segregation</div>
+      </div>
+    </div>
+    <div style="margin-top:18px"><button class="btn" onclick="goto(4)">VIEW CARBON METER →</button></div>
+  </div>
+</div>
+
+<!-- ═══════════════════════════════════════════════
+     SCREEN 4 — METER
+════════════════════════════════════════════════ -->
+<div class="screen" id="screen-4">
+  <div class="page-md">
+    <div class="label">STEP 5 / 8 · CARBON IMPACT METER</div>
+    <h2>Your Carbon Footprint Score</h2>
+    <div class="card">
+      <div class="gauge-wrap">
+        <svg width="260" height="170" viewBox="0 0 260 170" id="gaugeSvg">
+          <defs>
+            <linearGradient id="g1" x1="0%" y1="0%" x2="100%" y2="0%">
+              <stop offset="0%" stop-color="#00E676"/>
+              <stop offset="50%" stop-color="#FFEA00"/>
+              <stop offset="100%" stop-color="#FF3D00"/>
+            </linearGradient>
+            <filter id="glow">
+              <feGaussianBlur stdDeviation="3" result="coloredBlur"/>
+              <feMerge><feMergeNode in="coloredBlur"/><feMergeNode in="SourceGraphic"/></feMerge>
+            </filter>
+          </defs>
+          <!-- track -->
+          <path d="M 47.9 177.1 A 100 100 0 1 1 212.1 177.1" fill="none" stroke="#1e2a1e" stroke-width="16" stroke-linecap="round"/>
+          <!-- fill arc -->
+          <path id="gaugeArc" fill="none" stroke="url(#g1)" stroke-width="16" stroke-linecap="round" filter="url(#glow)"/>
+          <!-- needle -->
+          <line id="gaugeNeedle" x1="130" y1="130" x2="130" y2="58" stroke="#fff" stroke-width="3" stroke-linecap="round" filter="url(#glow)"/>
+          <circle id="gaugeDot" cx="130" cy="130" r="9" fill="#FFEA00" filter="url(#glow)"/>
+          <circle cx="130" cy="130" r="4" fill="#fff"/>
+          <text x="130" y="112" text-anchor="middle" fill="white" font-size="26" font-weight="800" font-family="Orbitron, monospace">62</text>
+          <text x="130" y="126" text-anchor="middle" fill="#556" font-size="9" letter-spacing="2" font-family="monospace">CARBON INDEX</text>
+        </svg>
+        <div class="big-num" id="meterNum">0 kg CO₂</div>
+        <div style="color:var(--sub);font-size:13px;letter-spacing:1px;margin-top:4px">TOTAL CARBON IMPACT — DETECTED WASTE</div>
+      </div>
+      <div class="grid3" style="margin-top:24px">
+        <div style="background:#080f09;border:1px solid var(--border);border-radius:10px;padding:14px 16px;text-align:center">
+          <div style="font-family:'Orbitron',monospace;font-weight:800;color:var(--muted);font-size:13px">🌱 LOW</div>
+          <div style="font-size:12px;color:var(--muted);margin-top:5px;font-family:monospace">&lt; 2 kg</div>
+        </div>
+        <div style="background:#FFEA0018;border:1px solid var(--yellow);border-radius:10px;padding:14px 16px;text-align:center;box-shadow:0 0 20px #FFEA0022">
+          <div style="font-family:'Orbitron',monospace;font-weight:800;color:var(--yellow);font-size:13px">⚠ MODERATE</div>
+          <div style="font-size:12px;color:var(--muted);margin-top:5px;font-family:monospace">2–6 kg</div>
+        </div>
+        <div style="background:#080f09;border:1px solid var(--border);border-radius:10px;padding:14px 16px;text-align:center">
+          <div style="font-family:'Orbitron',monospace;font-weight:800;color:var(--muted);font-size:13px">🔥 HIGH</div>
+          <div style="font-size:12px;color:var(--muted);margin-top:5px;font-family:monospace">&gt; 6 kg</div>
+        </div>
+      </div>
+    </div>
+    <div class="grid3" style="margin-top:16px">
+      <div class="card" style="text-align:center">
+        <div style="font-family:'Orbitron',monospace;font-size:26px;font-weight:900;color:#FF6D00;text-shadow:0 0 15px #FF6D0055">4.7 kg</div>
+        <div style="color:var(--sub);font-size:11px;margin-top:6px;letter-spacing:1px">💨 CO₂ EMITTED</div>
+      </div>
+      <div class="card" style="text-align:center">
+        <div style="font-family:'Orbitron',monospace;font-size:26px;font-weight:900;color:var(--green);text-shadow:0 0 15px #00E67655">3.9 kg</div>
+        <div style="color:var(--sub);font-size:11px;margin-top:6px;letter-spacing:1px">🌿 CO₂ SAVEABLE</div>
+      </div>
+      <div class="card" style="text-align:center">
+        <div style="font-family:'Orbitron',monospace;font-size:26px;font-weight:900;color:var(--yellow);text-shadow:0 0 15px #FFEA0055">5.2 kWh</div>
+        <div style="color:var(--sub);font-size:11px;margin-top:6px;letter-spacing:1px">⚡ ENERGY WASTED</div>
+      </div>
+    </div>
+    <div style="margin-top:18px"><button class="btn" onclick="goto(5)">VIEW GREEN CREDITS →</button></div>
+  </div>
+</div>
+
+<!-- ═══════════════════════════════════════════════
+     SCREEN 5 — CREDITS
+════════════════════════════════════════════════ -->
+<div class="screen" id="screen-5">
+  <div class="page-md">
+    <div class="label">STEP 6 / 8 · GREEN IMPACT SCORE</div>
+    <h2>Your Eco Rewards 🌱</h2>
+    <div class="card credits-hero" style="border-radius:14px">
+      <div style="font-size:60px">🏆</div>
+      <div class="credits-num">+<span id="creditsNum">0</span></div>
+      <div style="font-size:16px;color:var(--green);font-weight:700;letter-spacing:2px;margin-top:6px">GREEN CREDITS EARNED</div>
+      <div style="color:var(--muted);font-size:13px;margin-top:6px;letter-spacing:1px">For today's waste segregation activity</div>
+    </div>
+    <div class="grid3" style="margin-top:16px">
+      <div class="card" style="text-align:center">
+        <div style="font-family:'Orbitron',monospace;font-size:28px;font-weight:900;color:var(--green)">7.2 kg</div>
+        <div style="font-weight:700;margin-top:6px;font-size:13px">♻ Personal CO₂ Saved</div>
+        <div style="color:var(--muted);font-size:11px;margin-top:3px;letter-spacing:1px">This Month</div>
+      </div>
+      <div class="card" style="text-align:center">
+        <div style="font-family:'Orbitron',monospace;font-size:28px;font-weight:900;color:var(--green)">1.4 T</div>
+        <div style="font-weight:700;margin-top:6px;font-size:13px">🏫 Campus Total</div>
+        <div style="color:var(--muted);font-size:11px;margin-top:3px;letter-spacing:1px">This Semester</div>
+      </div>
+      <div class="card" style="text-align:center">
+        <div style="font-family:'Orbitron',monospace;font-size:28px;font-weight:900;color:var(--green)">#5</div>
+        <div style="font-weight:700;margin-top:6px;font-size:13px">📊 Your Eco Rank</div>
+        <div style="color:var(--muted);font-size:11px;margin-top:3px;letter-spacing:1px">On Leaderboard</div>
+      </div>
+    </div>
+    <div class="card" style="margin-top:16px">
+      <div style="font-family:'Orbitron',monospace;font-weight:800;font-size:14px;margin-bottom:16px">🏅 CAMPUS LEADERBOARD</div>
+      <div class="lb-row user">
+        <div class="lb-rank" style="color:#FFD700">🥇</div>
+        <div style="flex:1;font-weight:500">Arjun Mehta</div>
+        <div style="color:var(--green);font-weight:800;font-family:monospace">820 pts</div>
+        <div style="color:var(--muted);font-size:12px;font-family:monospace">14.2 kg</div>
+      </div>
+      <div class="lb-row normal">
+        <div class="lb-rank" style="color:#C0C0C0">🥈</div>
+        <div style="flex:1;font-weight:500">Priya Singh</div>
+        <div style="color:var(--green);font-weight:800;font-family:monospace">740 pts</div>
+        <div style="color:var(--muted);font-size:12px;font-family:monospace">12.8 kg</div>
+      </div>
+      <div class="lb-row normal">
+        <div class="lb-rank" style="color:#CD7F32">🥉</div>
+        <div style="flex:1;font-weight:500">Rahul Dev</div>
+        <div style="color:var(--green);font-weight:800;font-family:monospace">610 pts</div>
+        <div style="color:var(--muted);font-size:12px;font-family:monospace">10.5 kg</div>
+      </div>
+      <div class="lb-row normal">
+        <div class="lb-rank" style="color:var(--muted)">#4</div>
+        <div style="flex:1;font-weight:500">Sneha Rao</div>
+        <div style="color:var(--green);font-weight:800;font-family:monospace">580 pts</div>
+        <div style="color:var(--muted);font-size:12px;font-family:monospace">9.9 kg</div>
+      </div>
+      <div class="lb-row user">
+        <div class="lb-rank" style="color:var(--muted)">#5</div>
+        <div style="flex:1;font-weight:800">You ⭐</div>
+        <div style="color:var(--green);font-weight:800;font-family:monospace">420 pts</div>
+        <div style="color:var(--muted);font-size:12px;font-family:monospace">7.2 kg</div>
+      </div>
+    </div>
+    <div style="margin-top:18px"><button class="btn" onclick="goto(6)">VIEW DASHBOARD →</button></div>
+  </div>
+</div>
+
+<!-- ═══════════════════════════════════════════════
+     SCREEN 6 — DASHBOARD
+════════════════════════════════════════════════ -->
+<div class="screen" id="screen-6">
+  <div class="page">
+    <div class="label">STEP 7 / 8 · SUSTAINABILITY DASHBOARD</div>
+    <h2>Analytics Overview 📊</h2>
+    <div class="grid2">
+      <div class="card">
+        <div class="label">WASTE CATEGORY DISTRIBUTION</div>
+        <div style="display:flex;align-items:center;gap:12px">
+          <div style="width:175px;height:175px;flex-shrink:0"><canvas id="pieChart"></canvas></div>
+          <div style="flex:1">
+            <div style="display:flex;align-items:center;gap:8px;margin-bottom:9px"><div style="width:10px;height:10px;border-radius:2px;background:#00E676;flex-shrink:0"></div><span style="font-size:12px;flex:1;color:var(--sub)">Recyclable</span><span style="font-weight:800;font-family:monospace;font-size:13px;color:#00E676">40%</span></div>
+            <div style="display:flex;align-items:center;gap:8px;margin-bottom:9px"><div style="width:10px;height:10px;border-radius:2px;background:#00BCD4;flex-shrink:0"></div><span style="font-size:12px;flex:1;color:var(--sub)">Biodegradable</span><span style="font-weight:800;font-family:monospace;font-size:13px;color:#00BCD4">30%</span></div>
+            <div style="display:flex;align-items:center;gap:8px;margin-bottom:9px"><div style="width:10px;height:10px;border-radius:2px;background:#FFEA00;flex-shrink:0"></div><span style="font-size:12px;flex:1;color:var(--sub)">Hazardous</span><span style="font-weight:800;font-family:monospace;font-size:13px;color:#FFEA00">15%</span></div>
+            <div style="display:flex;align-items:center;gap:8px;margin-bottom:9px"><div style="width:10px;height:10px;border-radius:2px;background:#FF6D00;flex-shrink:0"></div><span style="font-size:12px;flex:1;color:var(--sub)">E-Waste</span><span style="font-weight:800;font-family:monospace;font-size:13px;color:#FF6D00">10%</span></div>
+            <div style="display:flex;align-items:center;gap:8px"><div style="width:10px;height:10px;border-radius:2px;background:#D50000;flex-shrink:0"></div><span style="font-size:12px;flex:1;color:var(--sub)">General</span><span style="font-weight:800;font-family:monospace;font-size:13px;color:#D50000">5%</span></div>
+          </div>
+        </div>
+      </div>
+      <div class="card">
+        <div class="label">WEEKLY CARBON TREND (kg CO₂)</div>
+        <canvas id="lineChart" height="175"></canvas>
+      </div>
+      <div class="card">
+        <div class="label">WASTE VOLUME BY TYPE (kg)</div>
+        <canvas id="barChart" height="175"></canvas>
+      </div>
+      <div class="card">
+        <div style="font-family:'Orbitron',monospace;font-weight:800;font-size:14px;margin-bottom:16px">TOP ECO CONTRIBUTORS</div>
+        <div style="display:flex;align-items:center;gap:12px;padding:10px 0;border-bottom:1px solid var(--border)">
+          <div style="font-family:'Orbitron',monospace;font-weight:900;font-size:14px;width:26px;color:#FFD700">🥇</div>
+          <div style="flex:1;font-size:13px">Arjun Mehta</div>
+          <div style="color:var(--green);font-weight:800;font-family:monospace;font-size:13px">820 pts</div>
+          <div style="color:var(--muted);font-size:11px;font-family:monospace">14.2 kg</div>
+        </div>
+        <div style="display:flex;align-items:center;gap:12px;padding:10px 0;border-bottom:1px solid var(--border)">
+          <div style="font-family:'Orbitron',monospace;font-weight:900;font-size:14px;width:26px;color:#C0C0C0">🥈</div>
+          <div style="flex:1;font-size:13px">Priya Singh</div>
+          <div style="color:var(--green);font-weight:800;font-family:monospace;font-size:13px">740 pts</div>
+          <div style="color:var(--muted);font-size:11px;font-family:monospace">12.8 kg</div>
+        </div>
+        <div style="display:flex;align-items:center;gap:12px;padding:10px 0;border-bottom:1px solid var(--border)">
+          <div style="font-family:'Orbitron',monospace;font-weight:900;font-size:14px;width:26px;color:#CD7F32">🥉</div>
+          <div style="flex:1;font-size:13px">Rahul Dev</div>
+          <div style="color:var(--green);font-weight:800;font-family:monospace;font-size:13px">610 pts</div>
+          <div style="color:var(--muted);font-size:11px;font-family:monospace">10.5 kg</div>
+        </div>
+        <div style="display:flex;align-items:center;gap:12px;padding:10px 0;border-bottom:1px solid var(--border)">
+          <div style="font-family:'Orbitron',monospace;font-weight:900;font-size:14px;width:26px;color:var(--muted)">#4</div>
+          <div style="flex:1;font-size:13px">Sneha Rao</div>
+          <div style="color:var(--green);font-weight:800;font-family:monospace;font-size:13px">580 pts</div>
+          <div style="color:var(--muted);font-size:11px;font-family:monospace">9.9 kg</div>
+        </div>
+        <div style="display:flex;align-items:center;gap:12px;padding:10px 0">
+          <div style="font-family:'Orbitron',monospace;font-weight:900;font-size:14px;width:26px;color:var(--muted)">#5</div>
+          <div style="flex:1;font-size:13px;font-weight:800">You ⭐</div>
+          <div style="color:var(--green);font-weight:800;font-family:monospace;font-size:13px">420 pts</div>
+          <div style="color:var(--muted);font-size:11px;font-family:monospace">7.2 kg</div>
+        </div>
+      </div>
+    </div>
+    <div style="margin-top:20px"><button class="btn" onclick="goto(7)">VIEW PREDICTIVE INSIGHTS →</button></div>
+  </div>
+</div>
+
+<!-- ═══════════════════════════════════════════════
+     SCREEN 7 — INSIGHTS
+════════════════════════════════════════════════ -->
+<div class="screen" id="screen-7">
+  <div class="page-md">
+    <div class="label">STEP 8 / 8 · PREDICTIVE INTELLIGENCE</div>
+    <h2>AI Forecast & Insights 🔮</h2>
+    <div class="card card-yellow" style="margin-bottom:16px">
+      <div class="row" style="align-items:flex-start;gap:16px">
+        <div style="font-size:40px;flex-shrink:0">⚠</div>
+        <div>
+          <div style="font-family:'Orbitron',monospace;font-weight:900;font-size:15px;color:var(--yellow);margin-bottom:8px;letter-spacing:1px">CARBON FORECAST ALERT</div>
+          <div style="font-size:15px;line-height:1.7">
+            If current waste trend continues, projected carbon footprint will increase by
+            <span style="color:var(--red);font-weight:800"> +34% in 30 days</span>, contributing approximately
+            <span style="color:#FF8800;font-weight:800"> 142 kg additional CO₂</span> to campus emissions.
+          </div>
+        </div>
+      </div>
+    </div>
+    <div class="card insight-row" style="margin-bottom:12px">
+      <div class="insight-icon">🔮</div>
+      <div style="flex:1">
+        <div style="font-family:'Orbitron',monospace;font-weight:800;font-size:13px;margin-bottom:4px">30-Day Projection</div>
+        <div style="color:var(--sub);font-size:13px;line-height:1.4">Carbon footprint increase if no action taken</div>
+      </div>
+      <div class="insight-val" style="color:var(--red);text-shadow:0 0 10px #FF3D0055">+34%</div>
+    </div>
+    <div class="card insight-row" style="margin-bottom:12px">
+      <div class="insight-icon">🎯</div>
+      <div style="flex:1">
+        <div style="font-family:'Orbitron',monospace;font-weight:800;font-size:13px;margin-bottom:4px">Recommended Action</div>
+        <div style="color:var(--sub);font-size:13px;line-height:1.4">Reducing plastic waste by 20% saves 18 kg CO₂/month</div>
+      </div>
+      <div class="insight-val" style="color:var(--green);text-shadow:0 0 10px #00E67655">Segregate Now</div>
+    </div>
+    <div class="card insight-row" style="margin-bottom:12px">
+      <div class="insight-icon">📈</div>
+      <div style="flex:1">
+        <div style="font-family:'Orbitron',monospace;font-weight:800;font-size:13px;margin-bottom:4px">Trend Detected</div>
+        <div style="color:var(--sub);font-size:13px;line-height:1.4">Plastic waste up 22% vs last month — intervention needed</div>
+      </div>
+      <div class="insight-val" style="color:var(--yellow);text-shadow:0 0 10px #FFEA0055">↑ Plastic Surge</div>
+    </div>
+    <div class="card insight-row" style="margin-bottom:12px">
+      <div class="insight-icon">🌍</div>
+      <div style="flex:1">
+        <div style="font-family:'Orbitron',monospace;font-weight:800;font-size:13px;margin-bottom:4px">Campus Carbon Budget</div>
+        <div style="color:var(--sub);font-size:13px;line-height:1.4">33% budget remaining for the semester</div>
+      </div>
+      <div class="insight-val" style="color:#FF8800;text-shadow:0 0 10px #FF880055">67% Used</div>
+    </div>
+    <div class="card insight-row" style="margin-bottom:16px">
+      <div class="insight-icon">💡</div>
+      <div style="flex:1">
+        <div style="font-family:'Orbitron',monospace;font-weight:800;font-size:13px;margin-bottom:4px">AI Recommendation</div>
+        <div style="color:var(--sub);font-size:13px;line-height:1.4">Starting campus composting could save 2.4T CO₂/year</div>
+      </div>
+      <div class="insight-val" style="color:#00BCD4;text-shadow:0 0 10px #00BCD455">Composting Program</div>
+    </div>
+    <div class="card" style="text-align:center;background:linear-gradient(135deg,#081a09,#0d1a0e);border:1px solid #00E67644;padding:36px 32px">
+      <div style="font-size:36px;margin-bottom:10px">🌱</div>
+      <div style="font-family:'Orbitron',monospace;font-weight:900;font-size:18px;margin-bottom:10px">Your actions matter.</div>
+      <div style="color:var(--sub);font-size:14px;margin-bottom:22px;line-height:1.6">Every piece of waste properly segregated brings campus closer to carbon neutrality.</div>
+      <div class="btn-row" style="justify-content:center">
+        <button class="btn" onclick="goto(0)">🏠 BACK TO HOME</button>
+        <button class="btn-out" onclick="goto(1)">⚡ NEW ANALYSIS</button>
+      </div>
+    </div>
+  </div>
+</div>
+
+<footer>ECOSENSEAI · CAMPUS SUSTAINABILITY PLATFORM · POWERED BY AI 🌍</footer>
+
+<!-- ═══════════════════════════════════════════════
+     JAVASCRIPT
+════════════════════════════════════════════════ -->
+<script>
+/* ── STATE ── */
+let currentScreen = 0;
+let uploadedImageURL = null;
+let chartsInitialized = false;
+let progressInterval = null;
+
+const SCREEN_NAMES = ["Home", "Upload", "Detection", "Simulator", "Meter", "Credits", "Dashboard", "Insights"];
+
+/* ── NAV TABS ── */
+(function buildTabs() {
+  const container = document.getElementById("navTabs");
+  SCREEN_NAMES.forEach((name, i) => {
+    const btn = document.createElement("button");
+    btn.className = "tab" + (i === 0 ? " active" : "");
+    btn.textContent = name;
+    btn.onclick = () => goto(i);
+    container.appendChild(btn);
+  });
+})();
+
+/* ── NAVIGATION ── */
+function goto(index) {
+  // Hide current
+  document.getElementById("screen-" + currentScreen).classList.remove("active");
+  // Update tabs
+  document.querySelectorAll(".tab").forEach((t, i) => {
+    t.classList.toggle("active", i === index);
+  });
+  currentScreen = index;
+  document.getElementById("screen-" + index).classList.add("active");
+
+  // Screen-specific init
+  if (index === 4) initMeter();
+  if (index === 5) initCredits();
+  if (index === 6) initCharts();
+}
+
+/* ── UPLOAD SCREEN ── */
+function handleFile(e) {
+  const file = e.target.files[0];
+  if (!file) return;
+  uploadedImageURL = URL.createObjectURL(file);
+
+  document.getElementById("uploadZone").style.display = "none";
+  document.getElementById("uploadButtons").style.display = "none";
+  document.getElementById("previewArea").style.display = "block";
+  document.getElementById("previewImg").src = uploadedImageURL;
+}
+
+function resetUpload() {
+  uploadedImageURL = null;
+  document.getElementById("previewArea").style.display = "none";
+  document.getElementById("uploadZone").style.display = "block";
+  document.getElementById("uploadButtons").style.display = "flex";
+  document.getElementById("fileInput").value = "";
+  document.getElementById("progressCard").style.display = "none";
+}
+
+function startAnalysis() {
+  document.getElementById("progressCard").style.display = "block";
+  document.getElementById("analyzeBtn").disabled = true;
+  document.getElementById("analyzeBtn").textContent = "⚙ ANALYZING...";
+
+  let pct = 0;
+  progressInterval = setInterval(() => {
+    pct += 4;
+    if (pct > 100) pct = 100;
+    document.getElementById("progressFill").style.width = pct + "%";
+    document.getElementById("progressPct").textContent = pct + "%";
+
+    // Step indicators
+    if (pct >= 30) document.getElementById("step1").style.color = "#00E676", document.getElementById("step1").textContent = "✓ OBJECT DETECTION";
+    if (pct >= 65) document.getElementById("step2").style.color = "#00E676", document.getElementById("step2").textContent = "✓ CLASSIFICATION";
+    if (pct >= 90) document.getElementById("step3").style.color = "#00E676", document.getElementById("step3").textContent = "✓ CARBON SCORING";
+
+    if (pct >= 100) {
+      clearInterval(progressInterval);
+      // Show detected image
+      if (uploadedImageURL) {
+        document.getElementById("detectionImg").src = uploadedImageURL;
+        document.getElementById("detectionImg").style.display = "block";
+        document.getElementById("noImgPlaceholder").style.display = "none";
+      }
+      setTimeout(() => goto(2), 300);
+    }
+  }, 60);
+}
+
+/* ── METER ── */
+function initMeter() {
+  // Draw gauge needle
+  const value = 62;
+  const pct = value / 100;
+  const angle = -135 + pct * 270;
+  const toRad = d => (d * Math.PI) / 180;
+  const cx = 130, cy = 130, r = 100;
+
+  // Arc
+  const startA = -135, endA = startA + pct * 270;
+  const x1 = cx + r * Math.cos(toRad(startA));
+  const y1 = cy + r * Math.sin(toRad(startA));
+  const x2 = cx + r * Math.cos(toRad(endA));
+  const y2 = cy + r * Math.sin(toRad(endA));
+  const large = pct * 270 > 180 ? 1 : 0;
+  document.getElementById("gaugeArc").setAttribute("d", M ${x1} ${y1} A ${r} ${r} 0 ${large} 1 ${x2} ${y2});
+
+  // Needle
+  const nx = cx + 72 * Math.cos(toRad(angle));
+  const ny = cy + 72 * Math.sin(toRad(angle));
+  document.getElementById("gaugeNeedle").setAttribute("x2", nx);
+  document.getElementById("gaugeNeedle").setAttribute("y2", ny);
+
+  // Animated counter
+  const el = document.getElementById("meterNum");
+  let v = 0;
+  const target = 47;
+  const t = setInterval(() => {
+    v += 1;
+    el.textContent = v + ".0 kg CO₂";
+    if (v >= target) clearInterval(t);
+  }, 25);
+}
+
+/* ── CREDITS COUNTER ── */
+function initCredits() {
+  const el = document.getElementById("creditsNum");
+  let v = 0;
+  const t = setInterval(() => {
+    v += 10;
+    el.textContent = v;
+    if (v >= 420) { el.textContent = 420; clearInterval(t); }
+  }, 28);
+}
+
+/* ── CHARTS ── */
+function initCharts() {
+  if (chartsInitialized) return;
+  chartsInitialized = true;
+
+  const tipPlugin = {
+    plugins: {
+      legend: { display: false },
+      tooltip: {
+        backgroundColor: "#0d1f0f",
+        borderColor: "#00E67633",
+        borderWidth: 1,
+        titleColor: "#888",
+        bodyColor: "#00E676",
+        bodyFont: { weight: "bold" },
+        padding: 10,
+        cornerRadius: 8,
+      }
+    }
+  };
+
+  // PIE
+  new Chart(document.getElementById("pieChart"), {
+    type: "doughnut",
+    data: {
+      labels: ["Recyclable", "Biodegradable", "Hazardous", "E-Waste", "General"],
+      datasets: [{ data: [40, 30, 15, 10, 5], backgroundColor: ["#00E676","#00BCD4","#FFEA00","#FF6D00","#D50000"], borderWidth: 0 }]
+    },
+    options: { ...tipPlugin, cutout: "55%", responsive: true, maintainAspectRatio: true }
+  });
+
+  // LINE
+  new Chart(document.getElementById("lineChart"), {
+    type: "line",
+    data: {
+      labels: ["Mon","Tue","Wed","Thu","Fri","Sat","Sun"],
+      datasets: [{
+        label: "carbon",
+        data: [12,18,14,22,16,8,10],
+        borderColor: "#00E676",
+        backgroundColor: "rgba(0,230,118,0.1)",
+        borderWidth: 2.5,
+        pointBackgroundColor: "#00E676",
+        pointRadius: 4,
+        tension: 0.4,
+        fill: true,
+      }]
+    },
+    options: {
+      ...tipPlugin,
+      responsive: true,
+      maintainAspectRatio: true,
+      scales: {
+        x: { grid: { color: "#1a2e1a" }, ticks: { color: "#4a6b4a", font: { family: "monospace", size: 11 } } },
+        y: { grid: { color: "#1a2e1a" }, ticks: { color: "#4a6b4a", font: { family: "monospace", size: 11 } } }
+      }
+    }
+  });
+
+  // BAR
+  new Chart(document.getElementById("barChart"), {
+    type: "bar",
+    data: {
+      labels: ["Plastic","Food","Paper","Metal","Glass"],
+      datasets: [{
+        label: "volume",
+        data: [45,30,20,12,8],
+        backgroundColor: ["#00E676","#00BCD4","#FFEA00","#FF6D00","#D50000"],
+        borderRadius: 6,
+        borderSkipped: false,
+      }]
+    },
+    options: {
+      ...tipPlugin,
+      responsive: true,
+      maintainAspectRatio: true,
+      scales: {
+        x: { grid: { color: "#1a2e1a" }, ticks: { color: "#4a6b4a", font: { family: "monospace", size: 11 } } },
+        y: { grid: { color: "#1a2e1a" }, ticks: { color: "#4a6b4a", font: { family: "monospace", size: 11 } } }
+      }
+    }
+  });
+}
+</script>
+</body>
+</html>
